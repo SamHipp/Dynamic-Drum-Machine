@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 // Variables_______________________________________________________________________________________
 
@@ -77,7 +77,7 @@ class App extends React.Component {
         mode: "live",
         sequence: ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
         bpm: 125,
-        playing: 17
+        playing: false
     }
     this.padPress = this.padPress.bind(this);
     this.handleKeyPress = this.handleKeyPress.bind(this);
@@ -90,13 +90,37 @@ class App extends React.Component {
     
     componentDidMount() {
         document.addEventListener('keydown', this.handleKeyPress);
-        
+        const sequencerTimer = setInterval(() => {
+            if (this.state.playing === true) {
+            let activePad = document.getElementById(`sequencer-${counter}`)
+            let lastPad = document.getElementById(`sequencer-${counter - 1}`)
+                activePad.classList.add('active');
+                if(counter > 0) {lastPad.classList.remove('active');}
+                let soundLetter = soundBank.filter((entry) => {return entry.name == this.state.sequence[counter]})
+            if (soundLetter.length === 1) {soundLetter = soundLetter[0].letter};
+            if (/[A-Z]/.test(soundLetter)) {
+                    
+                let audio = document.getElementById(soundLetter);
+                console.log(audio);
+                audio.currentTime = 0;
+                 audio.play();
+                    
+                } else {console.log('rest')};
+                if(counter === 15) {activePad.classList.remove('active');}
+                counter++;
+                counter = counter % 16;
+            }
+            }, this.state.bpm ? (15000/this.state.bpm) : 125);
+            return () => clearInterval(sequencerTimer);
       }
+    
     componentWillUnmount() {
         document.removeEventListener('keydown', this.handleKeyPress);
+        clearInterval(sequencerTimer);
       }
     
     // Functions________________________________________________________________________________________
+
 
     handleKeyPress(key) {
         if(this.state.mode === "live") {
@@ -111,7 +135,8 @@ class App extends React.Component {
             lastSound: sound[0].name,
             mode: this.state.mode,
             sequence: this.state.sequence,
-            bpm: this.state.bpm
+            bpm: this.state.bpm,
+            playing: this.state.playing
         });
         
     }
@@ -135,7 +160,8 @@ class App extends React.Component {
             lastSound: sound[0].name,
             mode: this.state.mode,
             sequence: this.state.sequence,
-            bpm: this.state.bpm
+            bpm: this.state.bpm,
+            playing: this.state.playing
         });
     }
     }
@@ -150,32 +176,51 @@ class App extends React.Component {
             lastSound: this.state.lastSound,
             mode: this.state.mode,
             sequence: newSequence,
-            bpm: this.state.bpm
+            bpm: this.state.bpm,
+            playing: this.state.playing
         })
     }
 
     playSequence(event) {
-        for(let i = 0; i < 16; i++) {
-            let activePad = document.getElementById(`sequencer-${i}`)
-            let lastPad = document.getElementById(`sequencer-${i - 1}`)
-            setTimeout(() => {
-                activePad.classList.add('active');
-                if(i > 0) {lastPad.classList.remove('active');}
-                let soundLetter = soundBank.filter((entry) => {return entry.name == this.state.sequence[i]})
-            if (soundLetter.length === 1) {soundLetter = soundLetter[0].letter};
-            if (/[A-Z]/.test(soundLetter)) {
+        // for(let i = 0; i < 16; i++) {
+        //     let activePad = document.getElementById(`sequencer-${i}`)
+        //     let lastPad = document.getElementById(`sequencer-${i - 1}`)
+        //     setTimeout(() => {
+        //         activePad.classList.add('active');
+        //         if(i > 0) {lastPad.classList.remove('active');}
+        //         let soundLetter = soundBank.filter((entry) => {return entry.name == this.state.sequence[i]})
+        //     if (soundLetter.length === 1) {soundLetter = soundLetter[0].letter};
+        //     if (/[A-Z]/.test(soundLetter)) {
                     
-                let audio = document.getElementById(soundLetter);
-                console.log(audio);
-                audio.currentTime = 0;
-                 audio.play();
+        //         let audio = document.getElementById(soundLetter);
+        //         console.log(audio);
+        //         audio.currentTime = 0;
+        //          audio.play();
                     
-                } else {console.log('rest')};
-                if(i === 15) {activePad.classList.remove('active');}
-            }, this.state.bpm ? (15000/this.state.bpm) * i : 125 * i);
+        //         } else {console.log('rest')};
+        //         if(i === 15) {activePad.classList.remove('active');}
+        //     }, this.state.bpm ? (15000/this.state.bpm) * i : 125 * i);
             
+        // }
+        if (this.state.playing === false) {
+        this.setState({
+            lastSound: this.state.lastSound,
+            mode: this.state.mode,
+            sequence: this.state.sequence,
+            bpm: this.state.bpm,
+            playing: true
+        })
         }
-        
+        else {
+            counter = 0;
+            this.setState({
+                lastSound: this.state.lastSound,
+                mode: this.state.mode,
+                sequence: this.state.sequence,
+                bpm: this.state.bpm,
+                playing: false
+            })
+        }
     }
 
     handleBPMInput(event) {
@@ -185,7 +230,8 @@ class App extends React.Component {
             lastSound: this.state.lastSound,
             mode: this.state.mode,
             sequence: this.state.sequence,
-            bpm: event.target.value
+            bpm: event.target.value,
+            playing: this.state.playing
         })
         }
     }
@@ -215,7 +261,8 @@ class App extends React.Component {
             lastSound: this.state.lastSound,
             mode: this.state.mode,
             sequence: this.state.sequence,
-            bpm: Math.floor(updatedBPM)
+            bpm: Math.floor(updatedBPM),
+            playing: this.state.playing
         })
         console.log(timeArr);
         }
